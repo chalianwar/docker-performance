@@ -1,0 +1,34 @@
+# excample configuration file for trace player
+client_info: # Required for run command
+    client_list:
+        - localhost:8081
+        # - client instance and port
+    port: 8080 # master's server port needed for clients to send inforamtion back
+    threads: 100 # number of threads per client node, each thread is a process that sends requests
+    wait: true # Determines if clients should wait the relative amount of time in trace before sending request
+
+verbose: true # optional input
+
+trace: # mandatory field
+    location: /home/michaellittley/data_centers/dal09 # current directory assumed if field not present
+    traces:
+        - prod-dal09-logstash-2017.08.01-0.json # at least one trace required
+    # entire trace used if limit not speciiied
+    limit: 
+        type: requests # seconds and requests are supported
+        amount: 100
+
+    output: results.json # only used in run mode, produced output trace with latencies
+
+registry:
+    - localhost:5005 # at least one registry required for run and warmup mode
+
+warmup: # required for run and warmup mode
+    output: interm.json # name of file that holds mapping between trace uri's and hashes
+
+    threads: 100 # how many processes used to push blobs to registry
+
+simulate: # required for simulate mode
+    name: cache.py #name of plugin file, should contain init function
+    args: # argument dictionary to be passed into 
+        cache_size: 8 # cache size in GB
