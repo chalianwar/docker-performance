@@ -18,13 +18,13 @@ The simulate mode takes a python file from the configuration file and attempts t
 
 To Run the master:
 
-python masterv2.py -c <command> -i <config.yaml>
+python master.py -c <command> -i <config.yaml>
 
 Possible commands: warmup, run, and simulate
 
 To run client:
 
-python clientv2.py -i 0.0.0.0 -p <port number>
+python client.py -i 0.0.0.0 -p <port number>
 
 ## Configuration file Options
 
