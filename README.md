@@ -30,7 +30,7 @@ python client.py -i 0.0.0.0 -p <port number>
 
 The configuration should be a yaml file, refer to config.yaml as an example
 
-###Options:
+### Options:
 
 #### Cient_info
 
