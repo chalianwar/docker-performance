@@ -1,15 +1,3 @@
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
-
 import sys
 import socket
 import os
@@ -204,7 +192,15 @@ def get_requests(files, t, limit):
                 if size > 0:
                     timestamp = datetime.datetime.strptime(request['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
                     duration = request['http.request.duration']
-                    r = {'delay': timestamp, 'uri': uri, 'size': size, 'method': method, 'duration': duration}
+                    client = request['http.request.remoteaddr']
+                    r = {
+                        'delay': timestamp, 
+                        'uri': uri, 
+                        'size': size, 
+                        'method': method, 
+                        'duration': duration,
+                        'client': client
+                    }
                     ret.append(r)
     ret.sort(key= lambda x: x['delay'])
     begin = ret[0]['delay']

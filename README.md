@@ -1,6 +1,10 @@
-# Trace Replayer
+# Docker Registry Trace Player
 
-The trace player is used to replay anonimized traces for a registry, but can also be used with plugins to simulate caching or prefetching.
+The Docker registry trace player is used to replay anonimized production level traces for a registry, available in the traces directory.
+The traces are from the IBM docker registry, separated by availability zones.
+The trace player can send traces to an actual registry or be used to simulate different caching or prefetching. The registry must be confiugred as a test registry in the current version, however.
+
+The trace player has two applications: the master and the client. The master is reponsible for reading a trace, generating layers, and distributing the layer requests amoung client applications to forward to a registry. The client application is only needed for the run mode.
 
 The trace player has 3 modes:
 
@@ -8,7 +12,7 @@ The trace player has 3 modes:
 * run
 * simulate
 
-The warmup mode connects to a registry and pushes all the layers in the traces specified by the configuration file. Manifests are not supported yet and so are treated as layers for the warmup and run modes. Layers are only pushed to the first registry specified in the configuration file.
+The warmup mode connects to a registry and pushes all the layers in the traces specified by the configuration file. Layers are generated as a string of 0's equal to the size of the request reported in the trace. Because the traces are anonimized, manifests are are treated as layers for the warmup and run modes. During warmup, layers will be pushed to the first registry in the configuration file.
 
 The Run mode replays the anonymized traces to the registry or registries specified in the configuration file. One or more clients need to be up before the master node is started.
 
@@ -28,15 +32,15 @@ python client.py -i 0.0.0.0 -p <port number>
 
 ## Configuration file Options
 
-The configuration should be a yaml file, refer to config.yaml as an example
+The configuration should be a yaml file, refer to config-example.yaml as an example. The following are all the supported options for the configuration file. Options not needed for a given mode will be ignored.
 
-### Options:
+###Options:
 
 #### Cient_info
 
 * required for run mode
 
-Options:
+client_info options:
 
 * client_list: list of hostname:port for all client nodes. Required option
 * port: int, the master port the clients will connect to to forward their results.
@@ -49,7 +53,7 @@ Options:
 #### trace
 * Required for all modes
 
-Options:
+trace options:
 
 * location, optional path to the anonymized traces, current directory assumed if absent. Absolute path should be used.
 * traces, mandatory list of trace files to be read as input
@@ -144,7 +148,14 @@ sudo pip install pyyaml
         'uri': 'v2/user/repo/<blobs or manifests>/layer',
         'size', size (int),
         'method': <'GET' or 'PUT'>,
-        'duration': duration (int)
+        'duration': duration (int),
+        'client': remote address (string)
     },
 ]
 
+# Support Channel
+
+Michael Littley: milit93@vt.edu
+Ali Anwar: ali@vt.edu
+
+Support is also available through the github repository
