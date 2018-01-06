@@ -34,7 +34,7 @@ python client.py -i 0.0.0.0 -p <port number>
 
 The configuration should be a yaml file, refer to config-example.yaml as an example. The following are all the supported options for the configuration file. Options not needed for a given mode will be ignored.
 
-###Options:
+### Options:
 
 #### Cient_info
 
