@@ -13,6 +13,7 @@ import yaml
 from dxf import *
 from multiprocessing import Process, Queue
 import importlib
+import hash_ring
 
 ## get requests
 def send_request_get(client, payload):
@@ -21,7 +22,7 @@ def send_request_get(client, payload):
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     s.post("http://" + str(client) + "/up", data=json.dumps(payload), headers=headers, timeout=100)
 
-def send_warmup_thread(requests, q, registry):
+def send_warmup_thread(requests, q, registry, generate_random):
     trace = {}
     dxf = DXF(registry, 'test_repo', insecure=True)
     f = open(str(os.getpid()), 'wb')
@@ -32,8 +33,13 @@ def send_warmup_thread(requests, q, registry):
             trace[request['uri']] = 'bad'
         elif not (request['uri'] in trace):
             with open(str(os.getpid()), 'wb') as f:
-                f.seek(request['size'] - 1)
-                f.write('\0')
+                if generate_random is True:
+                    f.seek(request['size'] - 9)
+                    f.write(str(random.getrandbits(64)))
+                    f.write('\0')
+                else:
+                    f.seek(request['size'] - 1)
+                    f.write('\0')
 
         try:
             dgst = dxf.push_blob(str(os.getpid()))
@@ -44,7 +50,7 @@ def send_warmup_thread(requests, q, registry):
     os.remove(str(os.getpid()))
     q.put(trace)
 
-def warmup(data, out_trace, registry, threads):
+def warmup(data, out_trace, registry, threads, generate_random):
     trace = {}
     processes = []
     q = Queue()
@@ -57,7 +63,7 @@ def warmup(data, out_trace, registry, threads):
             process_data[i % threads].append(request)
             i += 1
     for i in range(threads):
-        p = Process(target=send_warmup_thread, args=(process_data[i], q, registry))
+        p = Process(target=send_warmup_thread, args=(process_data[i], q, registry, generate_random))
         processes.append(p)
 
     for p in processes:
@@ -222,26 +228,42 @@ def get_requests(files, t, limit):
     else:
         return ret
 
-def organize(requests, out_trace, numclients, client_threads, port, wait, registries):
+def organize(requests, out_trace, numclients, client_threads, port, wait, registries, round_robin, push_rand):
     organized = []
 
+    if round_robin is False:
+        ring = hash_ring.HashRing(range(numclients))
     with open(out_trace, 'r') as f:
         blob = json.load(f)
 
     for i in range(numclients):
-        organized.append([{'port': port, 'id': random.getrandbits(32), 'threads': client_threads, 'wait': wait, 'registry': registries}])
+        organized.append([{'port': port, 'id': random.getrandbits(32), 'threads': client_threads, 'wait': wait, 'registry': registries, 'random': push_rand}])
         print organized[-1][0]['id']
     i = 0
+
     for r in requests:
+        request = {
+            'delay': r['delay'],
+            'duration': r['duration'],
+        }
         if r['uri'] in blob:
             b = blob[r['uri']]
             if b != 'bad':
-                organized[i % numclients].append({'blob': b, 'delay': r['delay'], 'duration': r['duration'], 'method': 'GET'})
-                i += 1
+                request['blob'] = b
+                request['method'] = 'GET'
+                if round_robin is True:
+                    organized[i % numclients].append(request)
+                    i += 1
+                else:
+                    organized[ring.get_node(r['client'])].append(request)
         else:
-            print 'here'
-            organized[i % numclients].append({'delay': r['delay'], 'size': r['size'], 'duration': r['duration'], 'method': 'PUT'})
-            i += 1
+            request['size'] = r['size']
+            request['method'] = 'PUT'
+            if round_robin is True:
+                organized[i % numclients].append(request)
+                i += 1
+            else:
+                organized[ring.get_node(r['client'])].append[(request)]
 
     return organized
 
@@ -310,12 +332,16 @@ def main():
         if verbose:
             print 'Output trace not specified, ./output.json will be used'
 
+    generate_random = False
     if args.command != 'simulate':
         if "warmup" not in inputs or 'output' not in inputs['warmup']:
             print 'warmup not specified in config, warmup output required. Exiting'
             exit(1)
         else:
             interm = inputs['warmup']['output']
+            if 'random' in inputs['warmup']:
+                if inputs['warmup']['random'] is True:
+                    generate_random = True
 
     registries = []
     if 'registry' in inputs:
@@ -332,7 +358,7 @@ def main():
             threads = 1
         if verbose:
             print 'warmup threads: ' + str(threads)
-        warmup(json_data, interm, registries[0], threads)
+        warmup(json_data, interm, registries[0], threads, generate_random)
 
     elif args.command == 'run':
         if verbose:
@@ -376,7 +402,12 @@ def main():
         else:
             wait = False
 
-        data = organize(json_data, interm, len(client_list), client_threads, port, wait, registries)
+        round_robin = True
+        if 'route' in inputs['client_info']:
+            if inputs['client_info']['route'] is True:
+                round_robin = False
+
+        data = organize(json_data, interm, len(client_list), client_threads, port, wait, registries, round_robin, generate_random)
         ## Perform GET
         get_blobs(data, client_list, port, out_file)
 

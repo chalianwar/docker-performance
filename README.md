@@ -46,6 +46,7 @@ client_info options:
 * port: int, the master port the clients will connect to to forward their results.
 * threads: int, Specifies how many processes a single client should spawn to forward requests. The number of possible concurrent connections is limited by the number of threads per client times the number of clients
 * wait: boolean, if true, the client threads will wait the relative time between requests as recorded in the traces. If false or absent, the clients will send requests as fast as possible.
+* route: optional boolean which instructs the master to route requests to clients based on the remote address of the traces rather than round robin routing.
 
 #### verbose
 * Optional Booblean, if true prints more information to standard out
@@ -74,6 +75,7 @@ Options:
 
 * output: required filename, is populated by warmup and needed by run for mapping the trace uri to a blob
 * threads: optional int, specifies how many threads should be used to send requests to registry in warmup mode
+* random: optional boolean, instructs the master to create random files for layers rather than creating files of 0's
 
 ### simulate
 
@@ -137,6 +139,8 @@ sudo pip install requests
 sudo pip install bottle
 
 sudo pip install pyyaml
+
+sudo pip install hash_ring
 
 # Data format for simulation
 * sorted by delay (timestamp of request)

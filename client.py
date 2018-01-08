@@ -12,7 +12,7 @@ from dxf import *
 
 app = Bottle()
 
-def send_requests(registry, wait, requests, startTime, q):
+def send_requests(registry, wait, push_rand, requests, startTime, q):
     dxf = []
     for reg in registry:
         dxf.append(DXF(reg, 'test_repo', insecure=True))
@@ -44,7 +44,11 @@ def send_requests(registry, wait, requests, startTime, q):
             size = r['size']
             if size > 0:
                 with open(fname, 'wb') as f:
-                    f.seek(size - 1)
+                    if push_rand is True:
+                        f.seek(size - 9)
+                        f.write(str(random.getrandbits(64)))
+                    else:
+                        f.seek(size - 1)
                     f.write('\0')
                 now = time.time()
                 if start > now and wait is True:
@@ -69,7 +73,7 @@ def get_messages(q):
         masterip = msg[0]
 
         requests = json.loads(msg[1])
-
+        put_rand = requests[0]['random']
         threads = requests[0]['threads']
         ID = requests[0]['id']
         master = (masterip, requests[0]['port'])
@@ -102,7 +106,7 @@ def get_messages(q):
         for i in range(threads):
             first = registry.pop(0)
             registry.append(first)
-            p = Process(target=send_requests, args=(registry, wait, process_requests[i], startTime, rq))
+            p = Process(target=send_requests, args=(registry, wait, put_rand, process_requests[i], startTime, rq))
             p.start()
             processes.append(p)
 

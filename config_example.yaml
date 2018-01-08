@@ -2,10 +2,12 @@
 client_info: # Required for run command
     client_list:
         - localhost:8081
+        - localhost:8082
         # - client instance and port
     port: 8080 # master's server port needed for clients to send inforamtion back
     threads: 100 # number of threads per client node, each thread is a process that sends requests
     wait: true # Determines if clients should wait the relative amount of time in trace before sending request
+    route: true # Tells the master to forward based on hashing on client urls rather than round robin
 
 verbose: true # optional input
 
@@ -27,6 +29,8 @@ warmup: # required for run and warmup mode
     output: interm.json # name of file that holds mapping between trace uri's and hashes
 
     threads: 100 # how many processes used to push blobs to registry
+
+    random: true # instructs the master to create a random file of the layer size rather than a string of 0's equal to the layer size in the trace
 
 simulate: # required for simulate mode
     name: cache.py #name of plugin file, should contain init function
