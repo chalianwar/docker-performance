@@ -4,6 +4,8 @@ The Docker registry trace player is used to replay anonimized production level t
 The traces are from the IBM docker registry, separated by availability zones.
 The trace player can send traces to an actual registry or be used to simulate different caching or prefetching. The registry must be confiugred as a test registry in the current version, however.
 
+The traces are available at http://research.cs.vt.edu/dssl/drtp-head.html. The size of the traces is 22 GB when unzipped.
+
 The trace player has two applications: the master and the client. The master is reponsible for reading a trace, generating layers, and distributing the layer requests amoung client applications to forward to a registry. The client application is only needed for the run mode.
 
 The trace player has 3 modes:
