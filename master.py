@@ -263,7 +263,7 @@ def organize(requests, out_trace, numclients, client_threads, port, wait, regist
                 organized[i % numclients].append(request)
                 i += 1
             else:
-                organized[ring.get_node(r['client'])].append[(request)]
+                organized[ring.get_node(r['client'])].append(request)
 
     return organized
 
